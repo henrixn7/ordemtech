@@ -66,7 +66,7 @@ function Admin() {
             <tbody>
               {dados.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.lojas?.nome_loja || "Sem loja"}</td>
+                  <td>{item.user_id}</td>
                   <td>{item.status}</td>
                   <td>{item.plano}</td>
                   <td>{item.vencimento}</td>
