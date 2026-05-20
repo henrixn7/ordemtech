@@ -35,6 +35,38 @@ function Admin() {
     setDados(data.assinaturas || [])
     setLoading(false)
   }
+  async function atualizarAssinatura(userId, acao) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const response = await fetch("/api/admin-update-assinatura", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      acao,
+    }),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    toast.error(data.error || "Erro ao atualizar assinatura")
+    return
+  }
+
+  toast.success(
+    acao === "liberar"
+      ? "Premium liberado"
+      : "Usuário bloqueado"
+  )
+
+  carregarDados()
+}
 
   useEffect(() => {
     carregarDados()
@@ -60,6 +92,7 @@ function Admin() {
                 <th>Plano</th>
                 <th>Vencimento</th>
                 <th>User ID</th>
+                <th>Ações</th>
               </tr>
             </thead>
 
