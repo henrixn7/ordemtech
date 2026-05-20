@@ -354,11 +354,9 @@ function App() {
         <Route
   path="/admin"
   element={
-    <RotaProtegida>
-      <Layout>
-        <Admin />
-      </Layout>
-    </RotaProtegida>
+    <Layout>
+      <Admin />
+    </Layout>
   }
 />
 
