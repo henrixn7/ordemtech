@@ -1,130 +1,122 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../services/supabase"
-import toast from "react-hot-toast"
 
 function Admin() {
-  const [loading, setLoading] = useState(true)
   const [dados, setDados] = useState([])
 
-  async function carregarDados() {
-    setLoading(true)
+  async function buscarAssinaturas() {
+    const { data, error } = await supabase
+      .from("assinaturas")
+      .select("*")
+      .order("created_at", { ascending: false })
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      toast.error("Sessão inválida")
+    if (error) {
+      console.log(error)
       return
     }
 
-    const response = await fetch("/api/admin-assinaturas", {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    })
+    setDados(data || [])
+  }
 
-    const data = await response.json()
+  async function atualizarAssinatura(userId, status) {
+    const { error } = await supabase
+      .from("assinaturas")
+      .update({
+        status,
+        plano: status === "premium" ? "Premium" : "Bloqueado",
+      })
+      .eq("user_id", userId)
 
-    if (!response.ok) {
-      toast.error(data.error || "Acesso negado")
-      setLoading(false)
+    if (error) {
+      console.log(error)
+      alert("Erro ao atualizar assinatura")
       return
     }
 
-    setDados(data.assinaturas || [])
-    setLoading(false)
+    buscarAssinaturas()
   }
-  async function atualizarAssinatura(userId, acao) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  const response = await fetch("/api/admin-update-assinatura", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify({
-      user_id: userId,
-      acao,
-    }),
-  })
-
-  const data = await response.json()
-
-  if (!response.ok) {
-    toast.error(data.error || "Erro ao atualizar assinatura")
-    return
-  }
-
-  toast.success(
-    acao === "liberar"
-      ? "Premium liberado"
-      : "Usuário bloqueado"
-  )
-
-  carregarDados()
-}
 
   useEffect(() => {
-    carregarDados()
+    buscarAssinaturas()
   }, [])
 
-  if (loading) {
-    return <h1 className="title">Carregando painel admin...</h1>
-  }
-
   return (
-    <div>
+    <div className="main">
+      <div className="top-header">
+        <div>
+          <span className="welcome">Bem-vindo de volta</span>
+          <h2>OrdemTech</h2>
+        </div>
+
+        <div className="user-box">
+          <span>Zero Code</span>
+
+          <button className="logout-btn">
+            Sair
+          </button>
+        </div>
+      </div>
+
       <h1 className="title">Painel Admin</h1>
 
-      <div className="card">
-        <h2>Assinaturas</h2>
+      <div className="panel">
+        <h3>Assinaturas</h3>
 
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th>Loja</th>
-                <th>Status</th>
-                <th>Plano</th>
-                <th>Vencimento</th>
-                <th>User ID</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {dados.map((item) => (
-                <tr key={item.id}>
-              <td>{item.user_id}</td>
-              <td>{item.status}</td>
-              <td>{item.plano}</td>
-              <td>{item.vencimento}</td>
+        <table>
+          <thead>
+            <tr>
+              <th>Loja</th>
+              <th>Status</th>
+              <th>Plano</th>
+              <th>Vencimento</th>
               <th>User ID</th>
-<td>
-  <button
-    onClick={() => atualizarAssinatura(item.user_id, "liberar")}
-    className="btn-premium"
-  >
-    Liberar Premium
-  </button>
+              <th>Ações</th>
+            </tr>
+          </thead>
 
-  <button
-    onClick={() => atualizarAssinatura(item.user_id, "bloquear")}
-    className="btn-remover"
-    style={{ marginLeft: "8px" }}
-  >
-    Remover
-  </button>
-</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          <tbody>
+            {dados.map((item) => (
+              <tr key={item.id}>
+                <td>{item.user_id}</td>
+
+                <td>{item.status}</td>
+
+                <td>{item.plano}</td>
+
+                <td>{item.vencimento}</td>
+
+                <td>{item.user_id}</td>
+
+                <td>
+                  <button
+                    onClick={() =>
+                      atualizarAssinatura(
+                        item.user_id,
+                        "premium"
+                      )
+                    }
+                    className="btn-premium"
+                  >
+                    Liberar Premium
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      atualizarAssinatura(
+                        item.user_id,
+                        "bloquear"
+                      )
+                    }
+                    className="btn-remover"
+                    style={{ marginLeft: "8px" }}
+                  >
+                    Remover
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )
