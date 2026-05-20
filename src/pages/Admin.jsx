@@ -99,11 +99,27 @@ function Admin() {
             <tbody>
               {dados.map((item) => (
                 <tr key={item.id}>
-                  <td>{item.user_id}</td>
-                  <td>{item.status}</td>
-                  <td>{item.plano}</td>
-                  <td>{item.vencimento}</td>
-                  <td>{item.user_id}</td>
+              <td>{item.user_id}</td>
+              <td>{item.status}</td>
+              <td>{item.plano}</td>
+              <td>{item.vencimento}</td>
+              <th>User ID</th>
+<td>
+  <button
+    onClick={() => atualizarAssinatura(item.user_id, "liberar")}
+    className="btn-premium"
+  >
+    Liberar Premium
+  </button>
+
+  <button
+    onClick={() => atualizarAssinatura(item.user_id, "bloquear")}
+    className="btn-remover"
+    style={{ marginLeft: "8px" }}
+  >
+    Remover
+  </button>
+</td>
                 </tr>
               ))}
             </tbody>
