@@ -143,6 +143,17 @@ function RotaProtegida({ children }) {
       return
     }
 
+    const { data: assinaturaExistente } = await supabase
+      .from("assinaturas")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (assinaturaExistente?.teste_usado) {
+      toast.error("Você já utilizou o teste grátis")
+      return
+    }
+
     const vencimento = new Date(
       Date.now() + 7 * 24 * 60 * 60 * 1000
     )
@@ -156,6 +167,7 @@ function RotaProtegida({ children }) {
         status: "teste",
         plano: "Teste grátis",
         vencimento,
+        teste_usado: true,
       })
 
     if (error) {
@@ -249,9 +261,26 @@ function RotaProtegida({ children }) {
               marginTop: "12px",
               opacity: 0.8,
             }}
-            onClick={() =>
-              alert("Em breve: pagamento mensal")
-            }
+            onClick={async () => {
+              try {
+                const response = await fetch(
+                  "/api/create-payment",
+                  {
+                    method: "POST",
+                  }
+                )
+
+                const data = await response.json()
+
+                if (data.init_point) {
+                  window.location.href =
+                    data.init_point
+                }
+              } catch (error) {
+                console.log(error)
+                alert("Erro ao iniciar pagamento")
+              }
+            }}
           >
             Assinar agora
           </button>
