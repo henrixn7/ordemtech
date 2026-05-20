@@ -5,12 +5,33 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+const ADMIN_EMAILS = [
+  "henriyurifortt@gmail.com",
+]
+
 export default async function handler(req, res) {
   try {
-    const adminEmail = req.headers["x-admin-email"]
+    const token = req.headers.authorization?.replace("Bearer ", "")
 
-    if (adminEmail !== "henriyurifortt@gmail.com") {
+    if (!token) {
       return res.status(401).json({
+        error: "Token não informado",
+      })
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token)
+
+    if (userError || !user) {
+      return res.status(401).json({
+        error: "Usuário inválido",
+      })
+    }
+
+    if (!ADMIN_EMAILS.includes(user.email)) {
+      return res.status(403).json({
         error: "Sem permissão",
       })
     }
@@ -28,7 +49,9 @@ export default async function handler(req, res) {
       })
     }
 
-    return res.status(200).json(data)
+    return res.status(200).json({
+      assinaturas: data,
+    })
   } catch (err) {
     console.log(err)
 
