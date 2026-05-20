@@ -24,6 +24,7 @@ import Loja from "./pages/Loja"
 import RecuperarSenha from "./pages/RecuperarSenha"
 import NovaSenha from "./pages/NovaSenha"
 import Home from "./pages/Home"
+import Admin from "./pages/Admin"
 
 function Layout({ children }) {
   const [nomeLoja, setNomeLoja] = useState("Minha Loja")
@@ -349,6 +350,17 @@ function App() {
             </RotaProtegida>
           }
         />
+
+        <Route
+  path="/admin"
+  element={
+    <RotaProtegida>
+      <Layout>
+        <Admin />
+      </Layout>
+    </RotaProtegida>
+  }
+/>
 
         <Route
           path="/clientes"
