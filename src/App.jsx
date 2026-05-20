@@ -257,33 +257,34 @@ function RotaProtegida({ children }) {
           </button>
 
           <button
-            style={{
-              marginTop: "12px",
-              opacity: 0.8,
-            }}
-            onClick={async () => {
-              try {
-                const response = await fetch(
-                  "/api/create-payment",
-                  {
-                    method: "POST",
-                  }
-                )
+  style={{
+    marginTop: "12px",
+    opacity: 0.8,
+  }}
+  onClick={async () => {
+    try {
+      const response = await fetch("/api/create-payment", {
+        method: "POST",
+      })
 
-                const data = await response.json()
+      const data = await response.json()
 
-                if (data.init_point) {
-                  window.location.href =
-                    data.init_point
-                }
-              } catch (error) {
-                console.log(error)
-                alert("Erro ao iniciar pagamento")
-              }
-            }}
-          >
-            Assinar agora
-          </button>
+      console.log("Resposta Mercado Pago:", data)
+
+      if (!data.init_point) {
+        alert(data.error || "Mercado Pago não retornou link")
+        return
+      }
+
+      window.location.href = data.init_point
+    } catch (error) {
+      console.log(error)
+      alert("Erro ao iniciar pagamento")
+    }
+  }}
+>
+  Assinar agora
+</button>
         </div>
       </div>
     )
