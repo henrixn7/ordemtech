@@ -49,28 +49,16 @@ function Login() {
               user_id: data.user.id,
             },
           ])
-
-          await supabase.from("assinaturas").insert([
-            {
-              user_id: data.user.id,
-              status: "teste",
-              plano: "Teste grátis",
-              vencimento: new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000
-              )
-                .toISOString()
-                .split("T")[0],
-            },
-          ])
         }
 
-        toast.success("Conta criada com 7 dias grátis")
+        toast.success("Conta criada com sucesso")
         navigate("/dashboard")
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password: senha,
-        })
+        const { error } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password: senha,
+          })
 
         if (error) {
           toast.error("E-mail ou senha inválidos")
