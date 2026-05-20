@@ -28,7 +28,7 @@ export default async function handler(req, res) {
               title: "OrdemTech Premium",
               quantity: 1,
               currency_id: "BRL",
-              unit_price: 29.9,
+              unit_price: 49.9,
             },
           ],
 
