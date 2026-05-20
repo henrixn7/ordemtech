@@ -263,9 +263,19 @@ function RotaProtegida({ children }) {
   }}
   onClick={async () => {
     try {
-      const response = await fetch("/api/create-payment", {
-        method: "POST",
-      })
+      const {
+  data: { user },
+} = await supabase.auth.getUser()
+
+const response = await fetch("/api/create-payment", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    user_id: user.id,
+  }),
+})
 
       const data = await response.json()
 

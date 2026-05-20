@@ -6,6 +6,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    const { user_id } = req.body
+
+    if (!user_id) {
+      return res.status(400).json({
+        error: "Usuário não informado",
+      })
+    }
+
     const response = await fetch(
       "https://api.mercadopago.com/checkout/preferences",
       {
@@ -20,17 +28,19 @@ export default async function handler(req, res) {
               title: "OrdemTech Premium",
               quantity: 1,
               currency_id: "BRL",
-              unit_price: 49.90,
+              unit_price: 29.9,
             },
           ],
 
+          external_reference: user_id,
+
+          notification_url:
+            "https://ordemtech.vercel.app/api/webhook-payment",
+
           back_urls: {
-            success:
-              "https://ordemtech.vercel.app/dashboard",
-            failure:
-              "https://ordemtech.vercel.app/",
-            pending:
-              "https://ordemtech.vercel.app/",
+            success: "https://ordemtech.vercel.app/dashboard",
+            failure: "https://ordemtech.vercel.app/",
+            pending: "https://ordemtech.vercel.app/",
           },
 
           auto_return: "approved",
