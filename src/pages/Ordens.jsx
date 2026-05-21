@@ -205,21 +205,59 @@ function Ordens() {
     buscarOrdens()
   }
 
-  async function atualizarStatus(id, novoStatus) {
-    const { error } = await supabase
-      .from("ordens")
-      .update({ status: novoStatus })
-      .eq("id", id)
+ async function atualizarStatus(id, novoStatus) {
+  const ordem = ordens.find((o) => o.id === id)
 
-    if (error) {
-      toast.error("Erro ao atualizar status")
-      console.log(error)
-      return
+  const { error } = await supabase
+    .from("ordens")
+    .update({ status: novoStatus })
+    .eq("id", id)
+
+  if (error) {
+    toast.error("Erro ao atualizar status")
+    console.log(error)
+    return
+  }
+
+  toast.success("Status atualizado")
+
+  if (ordem) {
+    const numero = String(ordem.telefone || "").replace(/\D/g, "")
+
+    const link = ordem.codigo_acompanhamento
+      ? gerarLinkAcompanhamento(ordem)
+      : ""
+
+    let mensagem = `Olá ${ordem.cliente}, sua ordem de serviço foi atualizada.\n\n`
+
+    mensagem += `${formatarNumeroOS(ordem.numero_os)}\n`
+    mensagem += `Status: ${novoStatus}\n`
+    mensagem += `Aparelho: ${ordem.aparelho}\n\n`
+
+    if (novoStatus === "Em análise") {
+      mensagem += "Seu aparelho está em análise pela equipe técnica.\n\n"
     }
 
-    toast.success("Status atualizado")
-    buscarOrdens()
+    if (novoStatus === "Pronto") {
+      mensagem += "Seu aparelho já está pronto para retirada ✅\n\n"
+    }
+
+    if (novoStatus === "Entregue") {
+      mensagem += "Seu aparelho foi entregue com sucesso 🤝\n\n"
+    }
+
+    mensagem += `Acompanhe sua OS:\n${link}\n\n`
+    mensagem += `OrdemTech`
+
+    const texto = encodeURIComponent(mensagem)
+
+    if (numero) {
+      window.open(`https://wa.me/55${numero}?text=${texto}`, "_blank")
+    }
   }
+
+  buscarOrdens()
+}
 
   function editarOrdem(ordem) {
     setEditandoId(ordem.id)
