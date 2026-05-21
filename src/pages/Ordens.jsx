@@ -324,7 +324,9 @@ OrdemTech`
     const texto = encodeURIComponent(mensagem)
 
     if (numero) {
-      window.open(`https://wa.me/55${numero}?text=${texto}`, "_blank")
+      setTimeout(() => {
+  window.open(`https://wa.me/55${numero}?text=${texto}`, "_blank")
+}, 300)
     } else {
       window.open(`https://wa.me/?text=${texto}`, "_blank")
     }
