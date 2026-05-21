@@ -475,7 +475,15 @@ const qrCodeUrl = linkAcompanhamento
 />
           <input placeholder="Aparelho" value={aparelho} onChange={(e) => setAparelho(e.target.value)} />
           <input placeholder="Marca" value={marca} onChange={(e) => setMarca(e.target.value)} />
-          <input placeholder="IMEI" value={imei} onChange={(e) => setImei(e.target.value)} />
+          <input
+  placeholder="IMEI"
+  value={imei}
+  maxLength={17}
+  onChange={(e) => {
+    const valor = e.target.value.replace(/\D/g, "")
+    setImei(valor)
+  }}
+/>
           <input placeholder="Serviço / Defeito" value={servico} onChange={(e) => setServico(e.target.value)} />
           <input placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} />
 
