@@ -460,7 +460,19 @@ const qrCodeUrl = linkAcompanhamento
 
         <div className="form-row">
           <input placeholder="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} />
-          <input placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+          <input
+  placeholder="Telefone"
+  value={telefone}
+  maxLength={15}
+  onChange={(e) => {
+    let valor = e.target.value.replace(/\D/g, "")
+
+    valor = valor.replace(/^(\d{2})(\d)/g, "($1) $2")
+    valor = valor.replace(/(\d{5})(\d)/, "$1-$2")
+
+    setTelefone(valor)
+  }}
+/>
           <input placeholder="Aparelho" value={aparelho} onChange={(e) => setAparelho(e.target.value)} />
           <input placeholder="Marca" value={marca} onChange={(e) => setMarca(e.target.value)} />
           <input placeholder="IMEI" value={imei} onChange={(e) => setImei(e.target.value)} />
