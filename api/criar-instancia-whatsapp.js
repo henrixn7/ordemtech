@@ -32,18 +32,18 @@ export default async function handler(req, res) {
     const instanceName = `ordemtech_${user.id.replaceAll("-", "")}`
 
     const response = await fetch(`${EVOLUTION_URL}/instance/create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: EVOLUTION_API_KEY,
-      },
-      body: JSON.stringify({
-        instanceName,
-        integration: "BAILEYS",
-        qrcode: true,
-      }),
-    })
-
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    apikey: EVOLUTION_API_KEY,
+  },
+  body: JSON.stringify({
+    instanceName,
+    token: EVOLUTION_API_KEY,
+    qrcode: true,
+    integration: "WHATSAPP-BAILEYS",
+  }),
+})
     const data = await response.json()
 
     if (!response.ok) {
