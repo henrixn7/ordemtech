@@ -29,16 +29,42 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
-      const { data, error } = await supabaseAdmin
-        .from("assinaturas")
-        .select("*")
-        .order("id", { ascending: false })
+      const { data: usuariosData, error: usuariosError } =
+        await supabaseAdmin.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000,
+        })
 
-      if (error) {
-        return res.status(500).json({ error: error.message })
+      if (usuariosError) {
+        return res.status(500).json({ error: usuariosError.message })
       }
 
-      return res.status(200).json({ assinaturas: data || [] })
+      const { data: assinaturasData, error: assinaturasError } =
+        await supabaseAdmin.from("assinaturas").select("*")
+
+      if (assinaturasError) {
+        return res.status(500).json({ error: assinaturasError.message })
+      }
+
+      const assinaturas = usuariosData.users.map((usuario) => {
+        const assinatura = assinaturasData.find(
+          (item) => item.user_id === usuario.id
+        )
+
+        return {
+          id: assinatura?.id || usuario.id,
+          user_id: usuario.id,
+          email: usuario.email,
+          loja: assinatura?.loja || usuario.email,
+          status: assinatura?.status || "sem assinatura",
+          plano: assinatura?.plano || "Grátis",
+          vencimento: assinatura?.vencimento || "-",
+          criado_em: usuario.created_at,
+          ultimo_login: usuario.last_sign_in_at,
+        }
+      })
+
+      return res.status(200).json({ assinaturas })
     }
 
     if (req.method === "POST") {
@@ -54,25 +80,6 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Status inválido" })
       }
 
-      const { data: assinaturaAtual, error: erroBusca } =
-        await supabaseAdmin
-          .from("assinaturas")
-          .select("*")
-          .eq("user_id", user_id)
-          .maybeSingle()
-
-      if (erroBusca) {
-        return res.status(500).json({
-          error: "Erro ao buscar assinatura atual",
-        })
-      }
-
-      if (!assinaturaAtual) {
-        return res.status(404).json({
-          error: "Assinatura não encontrada",
-        })
-      }
-
       const plano = status === "ativo" ? "Premium" : "Bloqueado"
 
       const vencimento =
@@ -80,30 +87,39 @@ export default async function handler(req, res) {
           ? "2027-12-31"
           : new Date().toISOString().split("T")[0]
 
-      const { error: erroUpdate } = await supabaseAdmin
+      const { data: assinaturaAtual } = await supabaseAdmin
         .from("assinaturas")
-        .update({
-          status,
-          plano,
-          vencimento,
-        })
+        .select("*")
         .eq("user_id", user_id)
+        .maybeSingle()
 
-      if (erroUpdate) {
+      const { error: erroUpsert } = await supabaseAdmin
+        .from("assinaturas")
+        .upsert(
+          {
+            user_id,
+            status,
+            plano,
+            vencimento,
+          },
+          {
+            onConflict: "user_id",
+          }
+        )
+
+      if (erroUpsert) {
         return res.status(500).json({
-          error: "Erro ao atualizar assinatura",
+          error: "Erro ao salvar assinatura",
         })
       }
 
-      const { error: erroLog } = await supabaseAdmin
-        .from("logs_admin")
-        .insert({
-          admin_email: user.email,
-          acao: "Atualização de assinatura",
-          user_id,
-          status_antigo: assinaturaAtual.status || null,
-          status_novo: status,
-        })
+      const { error: erroLog } = await supabaseAdmin.from("logs_admin").insert({
+        admin_email: user.email,
+        acao: "Atualização de assinatura",
+        user_id,
+        status_antigo: assinaturaAtual?.status || null,
+        status_novo: status,
+      })
 
       if (erroLog) {
         console.log("Erro ao salvar log:", erroLog)
@@ -118,7 +134,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método não permitido" })
   } catch (err) {
     console.log(err)
-
     return res.status(500).json({ error: "Erro interno" })
   }
 }
