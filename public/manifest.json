@@ -1,0 +1,22 @@
+{
+  "name": "OrdemTech",
+  "short_name": "OrdemTech",
+  "description": "Sistema de ordens de serviço para assistências técnicas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#f5c518",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
