@@ -23,7 +23,41 @@ function Acompanhamento() {
     }
 
     buscarOrdem()
+
+    const interval = setInterval(() => {
+      buscarOrdem()
+    }, 10000)
+
+    return () => clearInterval(interval)
   }, [codigo])
+
+  function etapaAtiva(etapa) {
+    const etapas = ["Aguardando", "Em análise", "Pronto", "Entregue"]
+    const statusAtual = etapas.indexOf(ordem?.status)
+    const etapaAtual = etapas.indexOf(etapa)
+
+    return etapaAtual <= statusAtual
+  }
+
+  function mensagemStatus() {
+    if (ordem?.status === "Aguardando") {
+      return "Seu aparelho foi recebido pela assistência técnica."
+    }
+
+    if (ordem?.status === "Em análise") {
+      return "Seu aparelho está sendo analisado pela equipe técnica."
+    }
+
+    if (ordem?.status === "Pronto") {
+      return "Seu aparelho já está pronto para retirada."
+    }
+
+    if (ordem?.status === "Entregue") {
+      return "Seu aparelho foi entregue com sucesso."
+    }
+
+    return "Acompanhe aqui o andamento da sua ordem de serviço."
+  }
 
   if (loading) {
     return (
@@ -41,6 +75,7 @@ function Acompanhamento() {
     return (
       <div className="acompanhamento-page">
         <div className="acompanhamento-card">
+          <span className="acompanhamento-badge">OrdemTech</span>
           <h1>OS não encontrada</h1>
           <p>Verifique se o link está correto.</p>
         </div>
@@ -51,9 +86,7 @@ function Acompanhamento() {
   return (
     <div className="acompanhamento-page">
       <div className="acompanhamento-card">
-        <span className="acompanhamento-badge">
-          OrdemTech
-        </span>
+        <span className="acompanhamento-badge">OrdemTech</span>
 
         <h1>Acompanhamento da OS</h1>
 
@@ -61,54 +94,23 @@ function Acompanhamento() {
           Consulte o andamento do seu aparelho em tempo real.
         </p>
 
-        <div className="acompanhamento-status">
-          {ordem.status}
-        </div>
+        <div className="acompanhamento-status">{ordem.status}</div>
+
+        <p className="status-msg">{mensagemStatus()}</p>
+
+        <p className="previsao">Prazo médio: 1 a 3 dias úteis</p>
+
         <div className="timeline">
-  <div
-    className={`timeline-step ${
-      ordem.status === "Aguardando"
-        ? "active"
-        : ""
-    }`}
-  >
-    <div className="timeline-dot"></div>
-    <span>Aguardando</span>
-  </div>
-
-  <div
-    className={`timeline-step ${
-      ordem.status === "Em análise"
-        ? "active"
-        : ""
-    }`}
-  >
-    <div className="timeline-dot"></div>
-    <span>Em análise</span>
-  </div>
-
-  <div
-    className={`timeline-step ${
-      ordem.status === "Pronto"
-        ? "active"
-        : ""
-    }`}
-  >
-    <div className="timeline-dot"></div>
-    <span>Pronto</span>
-  </div>
-
-  <div
-    className={`timeline-step ${
-      ordem.status === "Entregue"
-        ? "active"
-        : ""
-    }`}
-  >
-    <div className="timeline-dot"></div>
-    <span>Entregue</span>
-  </div>
-</div>
+          {["Aguardando", "Em análise", "Pronto", "Entregue"].map((etapa) => (
+            <div
+              key={etapa}
+              className={`timeline-step ${etapaAtiva(etapa) ? "active" : ""}`}
+            >
+              <div className="timeline-dot"></div>
+              <span>{etapa}</span>
+            </div>
+          ))}
+        </div>
 
         <div className="acompanhamento-grid">
           <div>
@@ -158,7 +160,7 @@ function Acompanhamento() {
         )}
 
         <p className="acompanhamento-footer">
-          Atualizado pela assistência técnica.
+          Atualizado automaticamente pela assistência técnica.
         </p>
       </div>
     </div>
