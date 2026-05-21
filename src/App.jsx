@@ -26,6 +26,9 @@ import NovaSenha from "./pages/NovaSenha"
 import Home from "./pages/Home"
 import Admin from "./pages/Admin"
 import Acompanhamento from "./pages/Acompanhamento"
+import Financeiro from "./pages/Financeiro"
+import Relatorios from "./pages/Relatorios"
+import Configuracoes from "./pages/Configuracoes"
 
 function Layout({ children }) {
   const [nomeLoja, setNomeLoja] = useState("Minha Loja")
@@ -45,10 +48,10 @@ function Layout({ children }) {
       if (!user) return
 
       const { data } = await supabase
-        .from("lojas")
-        .select("*")
+        .from("configuracoes")
+        .select("nome_loja")
         .eq("user_id", user.id)
-        .single()
+        .maybeSingle()
 
       if (data) {
         setNomeLoja(data.nome_loja || "Minha Loja")
@@ -94,6 +97,10 @@ function RotaProtegida({ children }) {
   const [loading, setLoading] = useState(true)
   const [authenticated, setAuthenticated] = useState(false)
   const [assinaturaAtiva, setAssinaturaAtiva] = useState(false)
+  const params = new URLSearchParams(window.location.search)
+
+const planoSelecionado =
+  params.get("plano") || localStorage.getItem("planoSelecionado") || "premium"
 
   async function verificarAssinatura(userId) {
     try {
@@ -145,10 +152,15 @@ function RotaProtegida({ children }) {
       return
     }
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
     const response = await fetch("/api/ativar-teste", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: session ? `Bearer ${session.access_token}` : "",
       },
       body: JSON.stringify({
         user_id: user.id,
@@ -259,8 +271,9 @@ function RotaProtegida({ children }) {
                     "Content-Type": "application/json",
                   },
                   body: JSON.stringify({
-                    user_id: user.id,
-                  }),
+  user_id: user.id,
+  plano: planoSelecionado,
+}),
                 })
 
                 const data = await response.json()
@@ -437,7 +450,36 @@ function App() {
             </RotaProtegida>
           }
         />
-
+        <Route
+  path="/financeiro"
+  element={
+    <RotaProtegida>
+      <Layout>
+        <Financeiro />
+      </Layout>
+    </RotaProtegida>
+  }
+/>
+<Route
+  path="/relatorios"
+  element={
+    <RotaProtegida>
+      <Layout>
+        <Relatorios />
+      </Layout>
+    </RotaProtegida>
+  }
+/>
+<Route
+  path="/configuracoes"
+  element={
+    <RotaProtegida>
+      <Layout>
+        <Configuracoes />
+      </Layout>
+    </RotaProtegida>
+  }
+/>
         <Route
           path="*"
           element={<Navigate to="/" replace />}

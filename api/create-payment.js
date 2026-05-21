@@ -6,13 +6,30 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { user_id } = req.body
+    const { user_id, plano } = req.body
 
     if (!user_id) {
       return res.status(400).json({
         error: "Usuário não informado",
       })
     }
+
+    const planos = {
+      basico: {
+        title: "OrdemTech Básico",
+        price: 29.9,
+      },
+      premium: {
+        title: "OrdemTech Premium",
+        price: 49.9,
+      },
+      enterprise: {
+        title: "OrdemTech Enterprise",
+        price: 99.9,
+      },
+    }
+
+    const planoSelecionado = planos[plano] || planos.premium
 
     const response = await fetch(
       "https://api.mercadopago.com/checkout/preferences",
@@ -25,14 +42,14 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           items: [
             {
-              title: "OrdemTech Premium",
+              title: planoSelecionado.title,
               quantity: 1,
               currency_id: "BRL",
-              unit_price: 49.9,
+              unit_price: planoSelecionado.price,
             },
           ],
 
-          external_reference: user_id,
+          external_reference: `${user_id}|${plano || "premium"}`,
 
           notification_url:
             "https://ordemtech.vercel.app/api/webhook-payment",
@@ -49,6 +66,13 @@ export default async function handler(req, res) {
     )
 
     const data = await response.json()
+
+    if (!response.ok) {
+      return res.status(400).json({
+        error: "Erro Mercado Pago",
+        details: data,
+      })
+    }
 
     return res.status(200).json({
       init_point: data.init_point,

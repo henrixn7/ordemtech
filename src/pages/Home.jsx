@@ -113,79 +113,13 @@ function Home() {
 
           <div className="hero-right">
 
-            <div className="system-mockup">
-
-              <div className="mockup-top">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-
-              <div className="mockup-content">
-
-                <div className="mockup-header">
-
-                  <div>
-                    <small>Dashboard</small>
-                    <h3>OrdemTech</h3>
-                  </div>
-
-                  <strong>R$ 8.420</strong>
-
-                </div>
-
-                <div className="mockup-cards">
-
-                  <div>
-                    <span>Ordens</span>
-                    <strong>128</strong>
-                  </div>
-
-                  <div>
-                    <span>Clientes</span>
-                    <strong>76</strong>
-                  </div>
-
-                  <div>
-                    <span>Vendas</span>
-                    <strong>42</strong>
-                  </div>
-
-                </div>
-
-                <div className="mockup-chart">
-
-                  <span style={{ height: "45%" }}></span>
-                  <span style={{ height: "70%" }}></span>
-                  <span style={{ height: "55%" }}></span>
-                  <span style={{ height: "85%" }}></span>
-                  <span style={{ height: "65%" }}></span>
-                  <span style={{ height: "95%" }}></span>
-
-                </div>
-
-                <div className="mockup-list">
-
-                  <div>
-                    <span>iPhone 11 - Tela</span>
-                    <strong>Pronto</strong>
-                  </div>
-
-                  <div>
-                    <span>Samsung A32 - Bateria</span>
-                    <strong>Em análise</strong>
-                  </div>
-
-                  <div>
-                    <span>Motorola G22 - Conector</span>
-                    <strong>Aguardando</strong>
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
+            <div className="system-mockup real-dashboard">
+  <img
+    src="/dashboard-real.png"
+    alt="Dashboard OrdemTech"
+    className="dashboard-image"
+  />
+</div>
 
           </div>
 
@@ -448,47 +382,108 @@ function Home() {
       {/* PLANOS */}
 
       <section className="planos" id="planos">
+  <span className="section-tag">Planos</span>
 
-        <h2>Planos</h2>
+  <h2>Escolha o plano ideal para sua assistência</h2>
 
-        <div className="planos-grid">
+  <p className="section-subtitle">
+    Organize clientes, ordens, estoque e vendas em um único sistema profissional.
+  </p>
 
-          <div className="plano-card destaque">
+  <div className="planos-grid">
 
-            <span className="plano-badge">
-              Mais usado
-            </span>
+    {/* Básico */}
+    <div className="plano-card">
+      <h3>Básico</h3>
 
-            <h3>Premium</h3>
+      <div className="plano-preco">
+        <strong>R$ 29,90</strong>
+        <span>/mês</span>
+      </div>
 
-            <h1>R$ 49,90</h1>
+      <ul>
+        <li>✔ Até 150 ordens/mês</li>
+        <li>✔ Cadastro de clientes</li>
+        <li>✔ Controle básico</li>
+        <li>✔ Vendas</li>
+        <li>✔ WhatsApp</li>
+        <li>✔ Suporte básico</li>
+      </ul>
 
-            <p>/mês</p>
+     <Link
+  to="/login?plano=basico"
+  onClick={() => localStorage.setItem("planoSelecionado", "basico")}
+  className="secondary-btn full"
+>
+  Assinar plano
+</Link>
+    </div>
 
-            <ul>
+    {/* Premium */}
+    <div className="plano-card destaque">
+      <span className="plano-badge">
+        Mais usado
+      </span>
 
-              <li>✔ Ordens ilimitadas</li>
-              <li>✔ Controle financeiro</li>
-              <li>✔ Estoque completo</li>
-              <li>✔ Dashboard premium</li>
-              <li>✔ WhatsApp integrado</li>
-              <li>✔ PDF profissional</li>
-              <li>✔ 7 dias grátis</li>
+      <h3>Premium</h3>
 
-            </ul>
+      <div className="plano-preco">
+        <strong>R$ 49,90</strong>
+        <span>/mês</span>
+      </div>
 
-            <Link
-              to="/login"
-              className="primary-btn full"
-            >
-              Começar agora
-            </Link>
+      <ul>
+        <li>✔ Ordens ilimitadas</li>
+        <li>✔ Dashboard premium</li>
+        <li>✔ Controle financeiro</li>
+        <li>✔ Estoque completo</li>
+        <li>✔ PDF profissional</li>
+        <li>✔ Relatórios</li>
+        <li>✔ WhatsApp integrado</li>
+        <li>✔ 7 dias grátis</li>
+      </ul>
 
-          </div>
+      <Link
+  to="/login?plano=premium"
+  onClick={() => localStorage.setItem("planoSelecionado", "premium")}
+  className="primary-btn full"
+>
+  Assinar agora
+</Link>
 
-        </div>
+<small>7 dias grátis • Sem cartão</small>
+    </div>
 
-      </section>
+    {/* Enterprise */}
+    <div className="plano-card">
+      <h3>Enterprise</h3>
+
+      <div className="plano-preco">
+        <strong>R$ 99,90</strong>
+        <span>/mês</span>
+      </div>
+
+      <ul>
+        <li>✔ Multi usuários</li>
+        <li>✔ Multi lojas</li>
+        <li>✔ Tudo ilimitado</li>
+        <li>✔ Prioridade suporte</li>
+        <li>✔ Recursos exclusivos</li>
+        <li>✔ Futuras integrações</li>
+      </ul>
+
+      <Link
+  to="/login?plano=enterprise"
+  onClick={() => localStorage.setItem("planoSelecionado", "enterprise")}
+  className="secondary-btn full"
+>
+  Assinar enterprise
+</Link>
+    </div>
+
+  </div>
+</section>
+
       <section className="depoimentos">
   <h2>O que lojas de assistência ganham com o OrdemTech</h2>
 
@@ -600,21 +595,29 @@ function Home() {
       {/* CTA */}
 
       <section className="cta">
+  <div className="cta-box">
 
-        <h2>
-          Transforme sua assistência técnica hoje
-        </h2>
+    <div className="cta-left">
+      <h2>Transforme sua assistência técnica hoje</h2>
 
-        <p>
-          Comece gratuitamente e leve sua loja
-          para outro nível.
-        </p>
+      <p>
+        Organize ordens, clientes, estoque e financeiro
+        em um único sistema profissional.
+      </p>
+    </div>
 
-        <Link to="/login" className="primary-btn">
-          Testar grátis
-        </Link>
+    <div className="cta-buttons">
+      <a href="/login" className="primary-btn">
+        Testar grátis
+      </a>
 
-      </section>
+      <a href="#planos" className="secondary-btn">
+        Ver planos
+      </a>
+    </div>
+
+  </div>
+</section>
             <footer className="footer">
         <div className="footer-brand">
           <h3>OrdemTech</h3>

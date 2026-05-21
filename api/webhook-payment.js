@@ -41,13 +41,23 @@ export default async function handler(req, res) {
       })
     }
 
-    const userId = payment.external_reference
+    const externalReference = payment.external_reference
 
-    if (!userId) {
+    if (!externalReference) {
       return res.status(400).json({
-        error: "Usuário não encontrado no pagamento",
+        error: "Referência do pagamento não encontrada",
       })
     }
+
+    const [userId, planoRecebido] = externalReference.split("|")
+
+    const planosPermitidos = {
+      basico: "Básico",
+      premium: "Premium",
+      enterprise: "Enterprise",
+    }
+
+    const planoFinal = planosPermitidos[planoRecebido] || "Premium"
 
     const vencimento = new Date()
     vencimento.setDate(vencimento.getDate() + 30)
@@ -57,7 +67,7 @@ export default async function handler(req, res) {
       .upsert({
         user_id: userId,
         status: "ativo",
-        plano: "Premium",
+        plano: planoFinal,
         vencimento: vencimento.toISOString().split("T")[0],
         teste_usado: true,
       })
@@ -71,6 +81,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
+      plano: planoFinal,
     })
   } catch (error) {
     console.log(error)

@@ -1,0 +1,190 @@
+import { useEffect, useState } from "react"
+import { supabase } from "../services/supabase"
+import toast from "react-hot-toast"
+
+function Financeiro() {
+  const [lancamentos, setLancamentos] = useState([])
+  const [tipo, setTipo] = useState("entrada")
+  const [descricao, setDescricao] = useState("")
+  const [valor, setValor] = useState("")
+  const [data, setData] = useState("")
+
+  async function buscarLancamentos() {
+    const { data: userData } = await supabase.auth.getUser()
+    const user = userData?.user
+
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from("financeiro")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("data", { ascending: false })
+
+    if (error) {
+      toast.error("Erro ao buscar financeiro")
+      return
+    }
+
+    setLancamentos(data || [])
+  }
+
+  async function adicionarLancamento() {
+    if (!descricao || !valor) {
+      toast.error("Preencha descrição e valor")
+      return
+    }
+
+    const { data: userData } = await supabase.auth.getUser()
+    const user = userData?.user
+
+    if (!user) return
+
+    const { error } = await supabase.from("financeiro").insert({
+      user_id: user.id,
+      tipo,
+      descricao,
+      valor: Number(valor),
+      data: data || new Date().toISOString().split("T")[0],
+    })
+
+    if (error) {
+      toast.error("Erro ao adicionar lançamento")
+      return
+    }
+
+    toast.success("Lançamento adicionado")
+    setDescricao("")
+    setValor("")
+    setData("")
+    setTipo("entrada")
+    buscarLancamentos()
+  }
+
+  async function excluirLancamento(id) {
+    const { error } = await supabase
+      .from("financeiro")
+      .delete()
+      .eq("id", id)
+
+    if (error) {
+      toast.error("Erro ao excluir")
+      return
+    }
+
+    toast.success("Lançamento excluído")
+    buscarLancamentos()
+  }
+
+  useEffect(() => {
+    buscarLancamentos()
+  }, [])
+
+  const entradas = lancamentos
+    .filter((item) => item.tipo === "entrada")
+    .reduce((total, item) => total + Number(item.valor), 0)
+
+  const despesas = lancamentos
+    .filter((item) => item.tipo === "despesa")
+    .reduce((total, item) => total + Number(item.valor), 0)
+
+  const lucro = entradas - despesas
+
+  return (
+    <div>
+      <h1 className="title">Financeiro</h1>
+
+      <div className="cards">
+        <div className="card premium-card">
+          <h3>Entradas</h3>
+          <p>R$ {entradas.toFixed(2)}</p>
+        </div>
+
+        <div className="card premium-card">
+          <h3>Despesas</h3>
+          <p>R$ {despesas.toFixed(2)}</p>
+        </div>
+
+        <div className="card premium-card">
+          <h3>Lucro</h3>
+          <p>R$ {lucro.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <div className="panel">
+        <h3>Novo lançamento</h3>
+
+        <div className="form-row">
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="entrada">Entrada</option>
+            <option value="despesa">Despesa</option>
+          </select>
+
+          <input
+            placeholder="Descrição"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+          />
+
+          <input
+            type="number"
+            placeholder="Valor"
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+          />
+
+          <input
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+          />
+
+          <button className="new-btn" onClick={adicionarLancamento}>
+            Adicionar
+          </button>
+        </div>
+      </div>
+
+      <div className="panel">
+        <h3>Lançamentos</h3>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Descrição</th>
+              <th>Valor</th>
+              <th>Data</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {lancamentos.map((item) => (
+              <tr key={item.id}>
+                <td>{item.tipo}</td>
+                <td>{item.descricao}</td>
+                <td>R$ {Number(item.valor).toFixed(2)}</td>
+                <td>{item.data}</td>
+                <td>
+                  <button
+                    className="delete-btn"
+                    onClick={() => excluirLancamento(item.id)}
+                  >
+                    Excluir
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {lancamentos.length === 0 && (
+          <p className="empty-text">Nenhum lançamento cadastrado ainda.</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default Financeiro

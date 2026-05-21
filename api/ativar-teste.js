@@ -11,10 +11,25 @@ export default async function handler(req, res) {
   }
 
   try {
+    const token = req.headers.authorization?.replace("Bearer ", "")
+
+    if (!token) {
+      return res.status(401).json({ error: "Token não informado" })
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(token)
+
+    if (authError || !user) {
+      return res.status(401).json({ error: "Usuário inválido ou sessão expirada" })
+    }
+
     const { user_id } = req.body
 
-    if (!user_id) {
-      return res.status(400).json({ error: "Usuário não informado" })
+    if (!user_id || user.id !== user_id) {
+      return res.status(401).json({ error: "Acesso não autorizado" })
     }
 
     const { data: assinaturaExistente, error: erroBusca } = await supabaseAdmin

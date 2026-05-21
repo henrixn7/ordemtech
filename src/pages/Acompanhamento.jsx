@@ -13,7 +13,7 @@ function Acompanhamento() {
 
 const { data, error } = await supabase
   .from("ordens")
-  .select("*")
+  .select("status, cliente, aparelho, marca, servico, valor, codigo_acompanhamento, observacoes, foto_url")
   .eq("codigo_acompanhamento", codigoFormatado)
   .maybeSingle()
 

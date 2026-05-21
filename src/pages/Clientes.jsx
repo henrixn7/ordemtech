@@ -106,7 +106,15 @@ function Clientes() {
             type="text"
             placeholder="Telefone"
             value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
+            maxLength={15}
+            onChange={(e) => {
+              let valor = e.target.value.replace(/\D/g, "")
+
+              valor = valor.replace(/^(\d{2})(\d)/g, "($1) $2")
+              valor = valor.replace(/(\d{5})(\d)/, "$1-$2")
+
+              setTelefone(valor)
+            }}
           />
 
           <input
