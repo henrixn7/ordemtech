@@ -9,11 +9,13 @@ function Acompanhamento() {
 
   useEffect(() => {
     async function buscarOrdem() {
-      const { data, error } = await supabase
-        .from("ordens")
-        .select("*")
-        .eq("codigo_acompanhamento", codigo)
-        .maybeSingle()
+      const codigoFormatado = codigo?.trim().toUpperCase()
+
+const { data, error } = await supabase
+  .from("ordens")
+  .select("*")
+  .eq("codigo_acompanhamento", codigoFormatado)
+  .maybeSingle()
 
       if (!error && data) {
         setOrdem(data)
