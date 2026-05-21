@@ -83,6 +83,34 @@ function Clientes() {
     buscarClientes()
   }
 
+  function exportarCSV() {
+    if (clientes.length === 0) {
+      alert("Nenhum cliente para exportar")
+      return
+    }
+
+    const cabecalho = ["ID", "Nome", "Telefone", "Aparelho"]
+    
+    const linhas = clientes.map((c) => [
+      c.id,
+      `"${String(c.nome || "").replace(/"/g, '""')}"`,
+      `"${String(c.telefone || "").replace(/"/g, '""')}"`,
+      `"${String(c.aparelho || "").replace(/"/g, '""')}"`
+    ])
+
+    const csvContent = "\ufeff" + [cabecalho.join(","), ...linhas.map(e => e.join(","))].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `clientes_ordemtech_${new Date().toISOString().split("T")[0]}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   useEffect(() => {
     buscarClientes()
   }, [])
@@ -131,7 +159,12 @@ function Clientes() {
       </div>
 
       <div className="panel">
-        <h3>Lista de Clientes</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+          <h3 style={{ margin: 0 }}>Lista de Clientes</h3>
+          <button className="new-btn" onClick={exportarCSV}>
+            Exportar CSV
+          </button>
+        </div>
 
         <table>
           <thead>

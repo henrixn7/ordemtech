@@ -448,6 +448,142 @@ const qrCodeUrl = linkAcompanhamento
     janela.document.close()
   }
 
+  function imprimirCupomTermico(ordem) {
+    const janela = window.open("", "", "width=400,height=800")
+    const linkAcompanhamento = ordem.codigo_acompanhamento
+      ? gerarLinkAcompanhamento(ordem)
+      : ""
+
+    const qrCodeUrl = linkAcompanhamento
+      ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(linkAcompanhamento)}`
+      : ""
+
+    janela.document.write(`
+      <html>
+        <head>
+          <title>${formatarNumeroOS(ordem.numero_os)} - Cupom</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+              font-family: 'Courier New', Courier, monospace;
+              font-size: 12px;
+              color: #000;
+              background: #fff;
+              width: 80mm;
+              padding: 6px;
+              margin: 0 auto;
+            }
+            .text-center { text-align: center; }
+            .logo { font-size: 18px; font-weight: bold; margin-bottom: 2px; }
+            .sub { font-size: 10px; color: #555; margin-bottom: 5px; }
+            .ticket-title { font-size: 13px; font-weight: bold; margin: 10px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 4px 0; text-transform: uppercase; }
+            .divider { border-top: 1px dashed #000; margin: 8px 0; }
+            .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+            .info-label { font-weight: bold; }
+            .info-value { text-align: right; word-break: break-word; max-width: 60%; }
+            .full-row { margin-bottom: 6px; }
+            .full-row-label { font-weight: bold; }
+            .full-row-value { padding-left: 4px; word-break: break-word; margin-top: 2px; }
+            .qr-box { text-align: center; margin: 10px 0; padding-top: 5px; border-top: 1px dashed #000; }
+            .qr-box img { width: 110px; height: 110px; margin-top: 5px; }
+            .rodape { font-size: 9px; text-align: center; margin-top: 20px; color: #555; }
+            .assinatura-box { margin-top: 35px; text-align: center; }
+            .linha { width: 80%; height: 1px; background: #000; margin: 0 auto 5px auto; }
+            @media print {
+              body { width: 100%; padding: 0; }
+              @page { margin: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="text-center">
+            <div class="logo">OrdemTech</div>
+            <div class="sub">Assistência Técnica</div>
+            <div class="ticket-title">COMPROVANTE DE OS</div>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">OS:</span>
+            <span class="info-value"><strong>${formatarNumeroOS(ordem.numero_os)}</strong></span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">DATA:</span>
+            <span class="info-value">${new Date().toLocaleDateString("pt-BR")}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">STATUS:</span>
+            <span class="info-value">${ordem.status}</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-row">
+            <span class="info-label">CLIENTE:</span>
+            <span class="info-value">${ordem.cliente}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">FONE:</span>
+            <span class="info-value">${ordem.telefone}</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="info-row">
+            <span class="info-label">APARELHO:</span>
+            <span class="info-value">${ordem.aparelho}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">MARCA:</span>
+            <span class="info-value">${ordem.marca || "Não informado"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">IMEI:</span>
+            <span class="info-value">${ordem.imei || "Não informado"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">VALOR:</span>
+            <span class="info-value">R$ ${Number(ordem.valor || 0).toLocaleString("pt-BR")}</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="full-row">
+            <div class="full-row-label">SERVIÇO / DEFEITO:</div>
+            <div class="full-row-value">${ordem.servico}</div>
+          </div>
+
+          ${ordem.observacoes ? `
+            <div class="full-row">
+              <div class="full-row-label">OBSERVAÇÕES:</div>
+              <div class="full-row-value">${ordem.observacoes}</div>
+            </div>
+          ` : ""}
+
+          ${qrCodeUrl ? `
+            <div class="qr-box">
+              <p>ACOMPANHE ONLINE</p>
+              <img src="${qrCodeUrl}" />
+            </div>
+          ` : ""}
+
+          <div class="assinatura-box">
+            <div class="linha"></div>
+            <p>Assinatura do Cliente</p>
+          </div>
+
+          <div class="rodape">
+            <p>Obrigado pela preferência!</p>
+            <p>OrdemTech - Gestão Inteligente</p>
+          </div>
+
+          <script>window.print()</script>
+        </body>
+      </html>
+    `)
+
+    janela.document.close()
+  }
+
   const aguardando = ordens.filter((o) => o.status === "Aguardando").length
   const analise = ordens.filter((o) => o.status === "Em análise").length
   const pronto = ordens.filter((o) => o.status === "Pronto").length
@@ -641,6 +777,10 @@ const qrCodeUrl = linkAcompanhamento
 
                   <button className="new-btn" onClick={() => imprimirOrdem(ordem)}>
                     Imprimir
+                  </button>
+
+                  <button className="new-btn" style={{ marginLeft: "8px" }} onClick={() => imprimirCupomTermico(ordem)}>
+                    Cupom
                   </button>
 
                   <button className="edit-btn" onClick={() => editarOrdem(ordem)}>

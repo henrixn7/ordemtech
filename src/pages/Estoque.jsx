@@ -102,6 +102,35 @@ function Estoque() {
     buscarProdutos()
   }
 
+  function exportarCSV() {
+    if (produtos.length === 0) {
+      toast.error("Nenhum produto para exportar")
+      return
+    }
+
+    const cabecalho = ["ID", "Produto", "Quantidade", "Preço"]
+    
+    const linhas = produtos.map((p) => [
+      p.id,
+      `"${String(p.produto || "").replace(/"/g, '""')}"`,
+      p.quantidade,
+      p.preco
+    ])
+
+    const csvContent = "\ufeff" + [cabecalho.join(","), ...linhas.map(e => e.join(","))].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `estoque_ordemtech_${new Date().toISOString().split("T")[0]}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.success("CSV exportado com sucesso!")
+  }
+
   return (
     <div>
       <h1 className="title">Estoque</h1>
@@ -136,7 +165,12 @@ function Estoque() {
       </div>
 
       <div className="panel">
-        <h3>Produtos Cadastrados</h3>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
+          <h3 style={{ margin: 0 }}>Produtos Cadastrados</h3>
+          <button className="new-btn" onClick={exportarCSV}>
+            Exportar CSV
+          </button>
+        </div>
 
         <table>
           <thead>

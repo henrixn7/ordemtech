@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-
 import { supabase } from "../services/supabase"
 import toast from "react-hot-toast"
 
@@ -9,7 +8,6 @@ function Login() {
 
   const [loading, setLoading] = useState(false)
   const [isCadastro, setIsCadastro] = useState(false)
-
   const [nomeLoja, setNomeLoja] = useState("")
   const [email, setEmail] = useState("")
   const [senha, setSenha] = useState("")
@@ -32,45 +30,57 @@ function Login() {
     try {
       if (isCadastro) {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password: senha,
         })
 
         if (error) {
-          toast.error(error.message)
+          console.log("ERRO SIGNUP:", error)
+          toast.error(error.message || "Erro ao criar conta")
           setLoading(false)
           return
         }
 
-        if (data.user) {
-          await supabase.from("lojas").insert([
-            {
-              nome_loja: nomeLoja,
-              user_id: data.user.id,
-            },
-          ])
+        const userId = data?.user?.id
+
+        if (userId) {
+          const { error: cfgError } = await supabase
+            .from("configuracoes")
+            .insert([
+              {
+                nome_loja: nomeLoja,
+                user_id: userId,
+              },
+            ])
+
+          if (cfgError) {
+            console.log("ERRO CONFIGURACOES:", cfgError)
+            toast.error("Conta criada, mas erro ao salvar loja")
+          }
         }
 
         toast.success("Conta criada com sucesso")
         navigate("/dashboard")
       } else {
-        const { error } =
-          await supabase.auth.signInWithPassword({
-            email,
-            password: senha,
-          })
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: senha,
+        })
 
         if (error) {
-          toast.error("E-mail ou senha inválidos")
+          console.log("ERRO LOGIN:", error)
+          toast.error(error.message || "E-mail ou senha inválidos")
           setLoading(false)
           return
         }
+
+        console.log("LOGIN OK:", data)
 
         toast.success("Login realizado")
         navigate("/dashboard")
       }
     } catch (err) {
-      console.log(err)
+      console.log("ERRO INESPERADO:", err)
       toast.error("Erro inesperado")
     }
 
@@ -110,11 +120,7 @@ function Login() {
           />
 
           <button type="submit" disabled={loading}>
-            {loading
-              ? "Carregando..."
-              : isCadastro
-              ? "Criar conta"
-              : "Entrar"}
+            {loading ? "Carregando..." : isCadastro ? "Criar conta" : "Entrar"}
           </button>
 
           {!isCadastro && (
@@ -128,16 +134,12 @@ function Login() {
           {isCadastro ? (
             <p>
               Já possui conta?{" "}
-              <span onClick={() => setIsCadastro(false)}>
-                Entrar
-              </span>
+              <span onClick={() => setIsCadastro(false)}>Entrar</span>
             </p>
           ) : (
             <p>
               Não possui conta?{" "}
-              <span onClick={() => setIsCadastro(true)}>
-                Criar conta
-              </span>
+              <span onClick={() => setIsCadastro(true)}>Criar conta</span>
             </p>
           )}
         </div>
