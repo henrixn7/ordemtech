@@ -25,6 +25,7 @@ import RecuperarSenha from "./pages/RecuperarSenha"
 import NovaSenha from "./pages/NovaSenha"
 import Home from "./pages/Home"
 import Admin from "./pages/Admin"
+import Acompanhamento from "./pages/Acompanhamento"
 
 function Layout({ children }) {
   const [nomeLoja, setNomeLoja] = useState("Minha Loja")
@@ -144,36 +145,20 @@ function RotaProtegida({ children }) {
       return
     }
 
-    const { data: assinaturaExistente } = await supabase
-      .from("assinaturas")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle()
-
-    if (assinaturaExistente?.teste_usado) {
-      toast.error("Você já utilizou o teste grátis")
-      return
-    }
-
-    const vencimento = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000
-    )
-      .toISOString()
-      .split("T")[0]
-
-    const { error } = await supabase
-      .from("assinaturas")
-      .upsert({
+    const response = await fetch("/api/ativar-teste", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         user_id: user.id,
-        status: "teste",
-        plano: "Teste grátis",
-        vencimento,
-        teste_usado: true,
-      })
+      }),
+    })
 
-    if (error) {
-      toast.error("Erro ao ativar teste grátis")
-      console.log(error)
+    const data = await response.json()
+
+    if (!response.ok) {
+      toast.error(data.error || "Erro ao ativar teste grátis")
       return
     }
 
@@ -258,47 +243,78 @@ function RotaProtegida({ children }) {
           </button>
 
           <button
-  style={{
-    marginTop: "12px",
-    opacity: 0.8,
-  }}
-  onClick={async () => {
-    try {
-      const {
-  data: { user },
-} = await supabase.auth.getUser()
+            style={{
+              marginTop: "12px",
+              opacity: 0.8,
+            }}
+            onClick={async () => {
+              try {
+                const {
+                  data: { user },
+                } = await supabase.auth.getUser()
 
-const response = await fetch("/api/create-payment", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    user_id: user.id,
-  }),
-})
+                const response = await fetch("/api/create-payment", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    user_id: user.id,
+                  }),
+                })
 
-      const data = await response.json()
+                const data = await response.json()
 
-      console.log("Resposta Mercado Pago:", data)
+                console.log("Resposta Mercado Pago:", data)
 
-      if (!data.init_point) {
-        alert(data.error || "Mercado Pago não retornou link")
-        return
-      }
+                if (!data.init_point) {
+                  alert(data.error || "Mercado Pago não retornou link")
+                  return
+                }
 
-      window.location.href = data.init_point
-    } catch (error) {
-      console.log(error)
-      alert("Erro ao iniciar pagamento")
-    }
-  }}
->
-  Assinar agora
-</button>
+                window.location.href = data.init_point
+              } catch (error) {
+                console.log(error)
+                alert("Erro ao iniciar pagamento")
+              }
+            }}
+          >
+            Assinar agora
+          </button>
         </div>
       </div>
     )
+  }
+
+  return children
+}
+
+function RotaAdmin({ children }) {
+  const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    async function checkAdmin() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user?.email === "henriyurifortt@gmail.com") {
+        setIsAdmin(true)
+      }
+
+      setLoading(false)
+    }
+
+    checkAdmin()
+  }, [])
+
+  if (loading) {
+    return <div className="loading-page">Carregando...</div>
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />
   }
 
   return children
@@ -331,6 +347,11 @@ function App() {
         <Route path="/login" element={<Login />} />
 
         <Route
+          path="/acompanhar/:codigo"
+          element={<Acompanhamento />}
+        />
+
+        <Route
           path="/recuperar-senha"
           element={<RecuperarSenha />}
         />
@@ -352,13 +373,15 @@ function App() {
         />
 
         <Route
-  path="/admin"
-  element={
-    <Layout>
-      <Admin />
-    </Layout>
-  }
-/>
+          path="/admin"
+          element={
+            <RotaAdmin>
+              <Layout>
+                <Admin />
+              </Layout>
+            </RotaAdmin>
+          }
+        />
 
         <Route
           path="/clientes"

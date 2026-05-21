@@ -3,37 +3,78 @@ import { supabase } from "../services/supabase"
 
 function Admin() {
   const [dados, setDados] = useState([])
+  const [loading, setLoading] = useState(false)
 
   async function buscarAssinaturas() {
-    const { data, error } = await supabase
-      .from("assinaturas")
-      .select("*")
-      .order("created_at", { ascending: false })
+    setLoading(true)
 
-    if (error) {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session) {
+        alert("Sessão expirada. Faça login novamente.")
+        return
+      }
+
+      const response = await fetch("/api/admin-assinaturas", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || "Erro ao buscar assinaturas")
+        return
+      }
+
+      setDados(data.assinaturas || [])
+    } catch (error) {
       console.log(error)
-      return
+      alert("Erro ao buscar assinaturas")
+    } finally {
+      setLoading(false)
     }
-
-    setDados(data || [])
   }
 
   async function atualizarAssinatura(userId, status) {
-    const { error } = await supabase
-      .from("assinaturas")
-      .update({
-        status,
-        plano: status === "premium" ? "Premium" : "Bloqueado",
-      })
-      .eq("user_id", userId)
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
-    if (error) {
+      if (!session) {
+        alert("Sessão expirada. Faça login novamente.")
+        return
+      }
+
+      const response = await fetch("/api/admin-assinaturas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          status,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || "Erro ao atualizar assinatura")
+        return
+      }
+
+      buscarAssinaturas()
+    } catch (error) {
       console.log(error)
       alert("Erro ao atualizar assinatura")
-      return
     }
-
-    buscarAssinaturas()
   }
 
   useEffect(() => {
@@ -42,81 +83,66 @@ function Admin() {
 
   return (
     <div className="main">
-      <div className="top-header">
-        <div>
-          <span className="welcome">Bem-vindo de volta</span>
-          <h2>OrdemTech</h2>
-        </div>
-
-        <div className="user-box">
-          <span>Zero Code</span>
-
-          <button className="logout-btn">
-            Sair
-          </button>
-        </div>
-      </div>
-
       <h1 className="title">Painel Admin</h1>
 
       <div className="panel">
         <h3>Assinaturas</h3>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Loja</th>
-              <th>Status</th>
-              <th>Plano</th>
-              <th>Vencimento</th>
-              <th>User ID</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {dados.map((item) => (
-              <tr key={item.id}>
-                <td>{item.user_id}</td>
-
-                <td>{item.status}</td>
-
-                <td>{item.plano}</td>
-
-                <td>{item.vencimento}</td>
-
-                <td>{item.user_id}</td>
-
-                <td>
-                  <button
-                    onClick={() =>
-                      atualizarAssinatura(
-                        item.user_id,
-                        "premium"
-                      )
-                    }
-                    className="btn-premium"
-                  >
-                    Liberar Premium
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      atualizarAssinatura(
-                        item.user_id,
-                        "bloquear"
-                      )
-                    }
-                    className="btn-remover"
-                    style={{ marginLeft: "8px" }}
-                  >
-                    Remover
-                  </button>
-                </td>
+        {loading ? (
+          <p>Carregando assinaturas...</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Loja</th>
+                <th>Status</th>
+                <th>Plano</th>
+                <th>Vencimento</th>
+                <th>User ID</th>
+                <th>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {dados.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.loja || item.user_id}</td>
+                  <td>{item.status}</td>
+                  <td>{item.plano}</td>
+                  <td>{item.vencimento}</td>
+                  <td>{item.user_id}</td>
+
+                  <td>
+                    <button
+                      onClick={() =>
+                        atualizarAssinatura(item.user_id, "ativo")
+                      }
+                      className="btn-premium"
+                    >
+                      Liberar Premium
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        atualizarAssinatura(item.user_id, "bloqueado")
+                      }
+                      className="btn-remover"
+                      style={{ marginLeft: "8px" }}
+                    >
+                      Remover
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {dados.length === 0 && (
+                <tr>
+                  <td colSpan="6">Nenhuma assinatura encontrada</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

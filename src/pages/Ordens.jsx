@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "../services/supabase"
 import toast from "react-hot-toast"
 import Swal from "sweetalert2"
+import { QRCodeCanvas } from "qrcode.react"
 
 import {
   FaClock,
@@ -12,7 +13,6 @@ import {
 
 function Ordens() {
   const [ordens, setOrdens] = useState([])
-
   const [cliente, setCliente] = useState("")
   const [telefone, setTelefone] = useState("")
   const [aparelho, setAparelho] = useState("")
@@ -28,6 +28,24 @@ function Ordens() {
 
   function formatarNumeroOS(numero) {
     return `OS #${String(numero || 0).padStart(4, "0")}`
+  }
+
+  function gerarCodigoAcompanhamento() {
+    return Math.random().toString(36).substring(2, 8).toUpperCase()
+  }
+
+  function gerarLinkAcompanhamento(ordem) {
+    return `${window.location.origin}/acompanhar/${ordem.codigo_acompanhamento}`
+  }
+
+  async function copiarLinkAcompanhamento(ordem) {
+    if (!ordem.codigo_acompanhamento) {
+      toast.error("Essa OS ainda não possui código de acompanhamento")
+      return
+    }
+
+    await navigator.clipboard.writeText(gerarLinkAcompanhamento(ordem))
+    toast.success("Link de acompanhamento copiado")
   }
 
   async function buscarOrdens() {
@@ -57,7 +75,7 @@ function Ordens() {
   }, [])
 
   const ordensFiltradas = ordens.filter((ordem) =>
-    `${ordem.numero_os} ${ordem.cliente} ${ordem.telefone} ${ordem.aparelho} ${ordem.marca} ${ordem.imei} ${ordem.servico} ${ordem.status}`
+    `${ordem.numero_os} ${ordem.cliente} ${ordem.telefone} ${ordem.aparelho} ${ordem.marca} ${ordem.imei} ${ordem.servico} ${ordem.status} ${ordem.codigo_acompanhamento}`
       .toLowerCase()
       .includes(busca.toLowerCase())
   )
@@ -128,6 +146,7 @@ function Ordens() {
     }
 
     const numeroOS = await gerarNumeroOS(user.id)
+    const codigoAcompanhamento = gerarCodigoAcompanhamento()
 
     const { error } = await supabase.from("ordens").insert([
       {
@@ -143,6 +162,7 @@ function Ordens() {
         status,
         foto_url,
         user_id: user.id,
+        codigo_acompanhamento: codigoAcompanhamento,
       },
     ])
 
@@ -173,10 +193,7 @@ function Ordens() {
 
     if (!resultado.isConfirmed) return
 
-    const { error } = await supabase
-      .from("ordens")
-      .delete()
-      .eq("id", id)
+    const { error } = await supabase.from("ordens").delete().eq("id", id)
 
     if (error) {
       toast.error("Erro ao excluir OS")
@@ -248,6 +265,9 @@ function Ordens() {
 
   function enviarWhatsApp(ordem) {
     const numero = String(ordem.telefone || "").replace(/\D/g, "")
+    const linkAcompanhamento = ordem.codigo_acompanhamento
+      ? gerarLinkAcompanhamento(ordem)
+      : "Link indisponível"
 
     const mensagem = `Olá ${ordem.cliente}, sua ordem de serviço foi atualizada.
 
@@ -257,6 +277,9 @@ Aparelho: ${ordem.aparelho}
 Marca: ${ordem.marca || "Não informado"}
 Serviço: ${ordem.servico}
 Valor: R$ ${ordem.valor}
+
+Acompanhe sua OS:
+${linkAcompanhamento}
 
 OrdemTech`
 
@@ -271,230 +294,105 @@ OrdemTech`
 
   function imprimirOrdem(ordem) {
     const janela = window.open("", "", "width=900,height=800")
+    const linkAcompanhamento = ordem.codigo_acompanhamento
+  ? gerarLinkAcompanhamento(ordem)
+  : ""
+
+const qrCodeUrl = linkAcompanhamento
+  ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(linkAcompanhamento)}`
+  : ""
 
     janela.document.write(`
       <html>
         <head>
           <title>${formatarNumeroOS(ordem.numero_os)}</title>
-
           <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-
-            body {
-              font-family: Arial, sans-serif;
-              background: #f4f4f4;
-              padding: 40px;
-              color: #111;
-            }
-
-            .container {
-              max-width: 800px;
-              margin: auto;
-              background: white;
-              border-radius: 20px;
-              overflow: hidden;
-              box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            }
-
-            .topo {
-              background: linear-gradient(135deg,#111,#1d1d1d);
-              color: white;
-              padding: 35px;
-            }
-
-            .logo {
-              font-size: 34px;
-              font-weight: bold;
-              color: #f5c518;
-            }
-
-            .sub {
-              color: #aaa;
-              margin-top: 5px;
-              font-size: 14px;
-            }
-
-            .os-box {
-              margin-top: 25px;
-              background: #f5c518;
-              color: #111;
-              display: inline-block;
-              padding: 10px 18px;
-              border-radius: 12px;
-              font-weight: bold;
-              font-size: 18px;
-            }
-
-            .conteudo {
-              padding: 35px;
-            }
-
-            .grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 18px;
-              margin-bottom: 20px;
-            }
-
-            .item {
-              background: #fafafa;
-              border: 1px solid #eee;
-              padding: 16px;
-              border-radius: 14px;
-            }
-
-            .item strong {
-              display: block;
-              color: #666;
-              margin-bottom: 8px;
-              font-size: 13px;
-            }
-
-            .item span {
-              font-size: 16px;
-              color: #111;
-              word-break: break-word;
-            }
-
-            .full {
-              grid-column: 1 / -1;
-            }
-
-            .foto-box {
-              margin-top: 25px;
-              text-align: center;
-            }
-
-            .foto-box img {
-              width: 260px;
-              border-radius: 18px;
-              border: 4px solid #f5c518;
-            }
-
-            .rodape {
-              margin-top: 45px;
-              padding-top: 25px;
-              border-top: 2px dashed #ddd;
-              text-align: center;
-            }
-
-            .assinatura {
-              margin-top: 60px;
-            }
-
-            .linha {
-              width: 260px;
-              height: 1px;
-              background: #111;
-              margin: 0 auto 10px auto;
-            }
-
-            .status {
-              display: inline-block;
-              padding: 8px 16px;
-              border-radius: 999px;
-              font-weight: bold;
-              background: #f5c518;
-              color: #111;
-            }
-
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 40px; color: #111; }
+            .container { max-width: 800px; margin: auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+            .topo { background: linear-gradient(135deg,#111,#1d1d1d); color: white; padding: 35px; }
+            .logo { font-size: 34px; font-weight: bold; color: #f5c518; }
+            .sub { color: #aaa; margin-top: 5px; font-size: 14px; }
+            .os-box { margin-top: 25px; background: #f5c518; color: #111; display: inline-block; padding: 10px 18px; border-radius: 12px; font-weight: bold; font-size: 18px; }
+            .conteudo { padding: 35px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
+            .item { background: #fafafa; border: 1px solid #eee; padding: 16px; border-radius: 14px; }
+            .item strong { display: block; color: #666; margin-bottom: 8px; font-size: 13px; }
+            .item span { font-size: 16px; color: #111; word-break: break-word; }
+            .full { grid-column: 1 / -1; }
+            .foto-box { margin-top: 25px; text-align: center; }
+            .foto-box img { width: 260px; border-radius: 18px; border: 4px solid #f5c518; }
+            .rodape { margin-top: 45px; padding-top: 25px; border-top: 2px dashed #ddd; text-align: center; }
+            .assinatura { margin-top: 60px; }
+            .linha { width: 260px; height: 1px; background: #111; margin: 0 auto 10px auto; }
+            .status { display: inline-block; padding: 8px 16px; border-radius: 999px; font-weight: bold; background: #f5c518; color: #111; }
             @media print {
-              body {
-                background: white;
-                padding: 0;
-              }
-
-              .container {
-                box-shadow: none;
-              }
+              body { background: white; padding: 0; }
+              .container { box-shadow: none; }
             }
+              .qr-box {
+  margin-top: 20px;
+  text-align: center;
+  border-top: 1px dashed #999;
+  padding-top: 15px;
+}
+
+.qr-box img {
+  width: 120px;
+  height: 120px;
+  margin-top: 10px;
+}
+
+.qr-box h3 {
+  margin-bottom: 8px;
+  color: #6d28d9;
+}
+
+.qr-box small {
+  display: block;
+  margin-top: 8px;
+  color: #666;
+  font-size: 11px;
+  word-break: break-all;
+}
           </style>
         </head>
-
         <body>
           <div class="container">
             <div class="topo">
               <div class="logo">OrdemTech</div>
-
-              <div class="sub">
-                Sistema para Assistência Técnica
-              </div>
-
-              <div class="os-box">
-                ${formatarNumeroOS(ordem.numero_os)}
-              </div>
+              <div class="sub">Sistema para Assistência Técnica</div>
+              <div class="os-box">${formatarNumeroOS(ordem.numero_os)}</div>
             </div>
 
             <div class="conteudo">
               <div class="grid">
-                <div class="item">
-                  <strong>CLIENTE</strong>
-                  <span>${ordem.cliente}</span>
-                </div>
-
-                <div class="item">
-                  <strong>TELEFONE</strong>
-                  <span>${ordem.telefone}</span>
-                </div>
-
-                <div class="item">
-                  <strong>APARELHO</strong>
-                  <span>${ordem.aparelho}</span>
-                </div>
-
-                <div class="item">
-                  <strong>MARCA</strong>
-                  <span>${ordem.marca || "Não informado"}</span>
-                </div>
-
-                <div class="item">
-                  <strong>IMEI</strong>
-                  <span>${ordem.imei || "Não informado"}</span>
-                </div>
-
-                <div class="item">
-                  <strong>VALOR</strong>
-                  <span>R$ ${Number(ordem.valor || 0).toLocaleString("pt-BR")}</span>
-                </div>
-
-                <div class="item full">
-                  <strong>SERVIÇO / DEFEITO</strong>
-                  <span>${ordem.servico}</span>
-                </div>
-
-                <div class="item full">
-                  <strong>OBSERVAÇÕES</strong>
-                  <span>${ordem.observacoes || "Nenhuma observação"}</span>
-                </div>
-
-                <div class="item">
-                  <strong>STATUS</strong>
-                  <span class="status">${ordem.status}</span>
-                </div>
-
-                <div class="item">
-                  <strong>DATA</strong>
-                  <span>${new Date().toLocaleDateString("pt-BR")}</span>
-                </div>
+                <div class="item"><strong>CLIENTE</strong><span>${ordem.cliente}</span></div>
+                <div class="item"><strong>TELEFONE</strong><span>${ordem.telefone}</span></div>
+                <div class="item"><strong>APARELHO</strong><span>${ordem.aparelho}</span></div>
+                <div class="item"><strong>MARCA</strong><span>${ordem.marca || "Não informado"}</span></div>
+                <div class="item"><strong>IMEI</strong><span>${ordem.imei || "Não informado"}</span></div>
+                <div class="item"><strong>VALOR</strong><span>R$ ${Number(ordem.valor || 0).toLocaleString("pt-BR")}</span></div>
+                <div class="item full"><strong>SERVIÇO / DEFEITO</strong><span>${ordem.servico}</span></div>
+                <div class="item full"><strong>OBSERVAÇÕES</strong><span>${ordem.observacoes || "Nenhuma observação"}</span></div>
+                <div class="item"><strong>STATUS</strong><span class="status">${ordem.status}</span></div>
+                <div class="item"><strong>DATA</strong><span>${new Date().toLocaleDateString("pt-BR")}</span></div>
+                <div class="item full"><strong>LINK DE ACOMPANHAMENTO</strong><span>${ordem.codigo_acompanhamento ? gerarLinkAcompanhamento(ordem) : "Não disponível"}</span></div>
               </div>
 
-              ${
-                ordem.foto_url
-                  ? `
-                  <div class="foto-box">
-                    <img src="${ordem.foto_url}" />
-                  </div>
-                `
-                  : ""
-              }
+              ${ordem.foto_url ? `<div class="foto-box"><img src="${ordem.foto_url}" /></div>` : ""}
+               ${qrCodeUrl ? `
+  <div class="qr-box">
+    <h3>Acompanhe sua ordem online</h3>
+    <p>Escaneie o QR Code abaixo:</p>
 
+    <img src="${qrCodeUrl}" />
+
+    <small>${linkAcompanhamento}</small>
+  </div>
+` : ""}
               <div class="rodape">
                 <p>Documento gerado automaticamente pelo OrdemTech</p>
-
                 <div class="assinatura">
                   <div class="linha"></div>
                   Assinatura do Cliente
@@ -502,10 +400,7 @@ OrdemTech`
               </div>
             </div>
           </div>
-
-          <script>
-            window.print()
-          </script>
+          <script>window.print()</script>
         </body>
       </html>
     `)
@@ -513,21 +408,10 @@ OrdemTech`
     janela.document.close()
   }
 
-  const aguardando = ordens.filter(
-    (o) => o.status === "Aguardando"
-  ).length
-
-  const analise = ordens.filter(
-    (o) => o.status === "Em análise"
-  ).length
-
-  const pronto = ordens.filter(
-    (o) => o.status === "Pronto"
-  ).length
-
-  const entregue = ordens.filter(
-    (o) => o.status === "Entregue"
-  ).length
+  const aguardando = ordens.filter((o) => o.status === "Aguardando").length
+  const analise = ordens.filter((o) => o.status === "Em análise").length
+  const pronto = ordens.filter((o) => o.status === "Pronto").length
+  const entregue = ordens.filter((o) => o.status === "Entregue").length
 
   return (
     <div>
@@ -537,56 +421,36 @@ OrdemTech`
         <div className="card premium-card">
           <div className="card-top">
             <span>Aguardando</span>
-
-            <div className="card-icon warning">
-              <FaClock />
-            </div>
+            <div className="card-icon warning"><FaClock /></div>
           </div>
-
           <p>{aguardando}</p>
-
           <small>Ordens aguardando atendimento</small>
         </div>
 
         <div className="card premium-card">
           <div className="card-top">
             <span>Em análise</span>
-
-            <div className="card-icon">
-              <FaSearch />
-            </div>
+            <div className="card-icon"><FaSearch /></div>
           </div>
-
           <p>{analise}</p>
-
           <small>Aparelhos em análise técnica</small>
         </div>
 
         <div className="card premium-card">
           <div className="card-top">
             <span>Pronto</span>
-
-            <div className="card-icon">
-              <FaCheckCircle />
-            </div>
+            <div className="card-icon"><FaCheckCircle /></div>
           </div>
-
           <p>{pronto}</p>
-
           <small>Ordens finalizadas</small>
         </div>
 
         <div className="card premium-card">
           <div className="card-top">
             <span>Entregue</span>
-
-            <div className="card-icon">
-              <FaBoxOpen />
-            </div>
+            <div className="card-icon"><FaBoxOpen /></div>
           </div>
-
           <p>{entregue}</p>
-
           <small>Ordens entregues ao cliente</small>
         </div>
       </div>
@@ -595,79 +459,29 @@ OrdemTech`
         <h3>{editandoId ? "Editar Ordem" : "Nova Ordem"}</h3>
 
         <div className="form-row">
-          <input
-            placeholder="Cliente"
-            value={cliente}
-            onChange={(e) => setCliente(e.target.value)}
-          />
+          <input placeholder="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} />
+          <input placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} />
+          <input placeholder="Aparelho" value={aparelho} onChange={(e) => setAparelho(e.target.value)} />
+          <input placeholder="Marca" value={marca} onChange={(e) => setMarca(e.target.value)} />
+          <input placeholder="IMEI" value={imei} onChange={(e) => setImei(e.target.value)} />
+          <input placeholder="Serviço / Defeito" value={servico} onChange={(e) => setServico(e.target.value)} />
+          <input placeholder="Valor" value={valor} onChange={(e) => setValor(e.target.value)} />
 
-          <input
-            placeholder="Telefone"
-            value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
-          />
-
-          <input
-            placeholder="Aparelho"
-            value={aparelho}
-            onChange={(e) => setAparelho(e.target.value)}
-          />
-
-          <input
-            placeholder="Marca"
-            value={marca}
-            onChange={(e) => setMarca(e.target.value)}
-          />
-
-          <input
-            placeholder="IMEI"
-            value={imei}
-            onChange={(e) => setImei(e.target.value)}
-          />
-
-          <input
-            placeholder="Serviço / Defeito"
-            value={servico}
-            onChange={(e) => setServico(e.target.value)}
-          />
-
-          <input
-            placeholder="Valor"
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-          />
-
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
+          <select value={status} onChange={(e) => setStatus(e.target.value)}>
             <option>Aguardando</option>
             <option>Em análise</option>
             <option>Pronto</option>
             <option>Entregue</option>
           </select>
 
-          <input
-            placeholder="Observações"
-            value={observacoes}
-            onChange={(e) => setObservacoes(e.target.value)}
-          />
+          <input placeholder="Observações" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
 
           <label className="upload-btn">
             {foto ? foto.name : "Adicionar Foto"}
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFoto(e.target.files[0])}
-              hidden
-            />
+            <input type="file" accept="image/*" onChange={(e) => setFoto(e.target.files[0])} hidden />
           </label>
 
-          <button
-            className="new-btn"
-            onClick={editandoId ? salvarEdicao : adicionarOrdem}
-          >
+          <button className="new-btn" onClick={editandoId ? salvarEdicao : adicionarOrdem}>
             {editandoId ? "Salvar Edição" : "Adicionar"}
           </button>
 
@@ -684,7 +498,7 @@ OrdemTech`
 
         <input
           className="search-input"
-          placeholder="Buscar por OS, cliente, telefone, aparelho, IMEI, serviço ou status..."
+          placeholder="Buscar por OS, cliente, telefone, aparelho, IMEI, serviço, status ou código..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
@@ -708,18 +522,14 @@ OrdemTech`
             {ordensFiltradas.map((ordem) => (
               <tr key={ordem.id}>
                 <td>
-                  <strong>
-                    {formatarNumeroOS(ordem.numero_os)}
-                  </strong>
+                  <strong>{formatarNumeroOS(ordem.numero_os)}</strong>
+                  <br />
+                  <small>{ordem.codigo_acompanhamento || "Sem código"}</small>
                 </td>
 
                 <td>
                   {ordem.foto_url ? (
-                    <img
-                      src={ordem.foto_url}
-                      className="ordem-foto"
-                      alt="Foto da ordem"
-                    />
+                    <img src={ordem.foto_url} className="ordem-foto" alt="Foto da ordem" />
                   ) : (
                     "Sem foto"
                   )}
@@ -727,29 +537,21 @@ OrdemTech`
 
                 <td>
                   <strong>{ordem.cliente}</strong>
-
                   <br />
-
-                  <small>
-                    IMEI: {ordem.imei || "Não informado"}
-                  </small>
+                  <small>IMEI: {ordem.imei || "Não informado"}</small>
                 </td>
 
                 <td>{ordem.telefone}</td>
 
                 <td>
                   {ordem.aparelho}
-
                   <br />
-
                   <small>{ordem.marca}</small>
                 </td>
 
                 <td>
                   {ordem.servico}
-
                   <br />
-
                   <small>{ordem.observacoes}</small>
                 </td>
 
@@ -757,13 +559,9 @@ OrdemTech`
 
                 <td>
                   <select
-                    className={`status-select ${String(ordem.status || "")
-                      .replace(" ", "-")
-                      .toLowerCase()}`}
+                    className={`status-select ${String(ordem.status || "").replace(" ", "-").toLowerCase()}`}
                     value={ordem.status}
-                    onChange={(e) =>
-                      atualizarStatus(ordem.id, e.target.value)
-                    }
+                    onChange={(e) => atualizarStatus(ordem.id, e.target.value)}
                   >
                     <option>Aguardando</option>
                     <option>Em análise</option>
@@ -773,31 +571,23 @@ OrdemTech`
                 </td>
 
                 <td>
-                  <button
-                    className="whatsapp-btn"
-                    onClick={() => enviarWhatsApp(ordem)}
-                  >
+                  <button className="whatsapp-btn" onClick={() => enviarWhatsApp(ordem)}>
                     WhatsApp
                   </button>
 
-                  <button
-                    className="new-btn"
-                    onClick={() => imprimirOrdem(ordem)}
-                  >
+                  <button className="new-btn" onClick={() => copiarLinkAcompanhamento(ordem)}>
+                    Copiar Link
+                  </button>
+
+                  <button className="new-btn" onClick={() => imprimirOrdem(ordem)}>
                     Imprimir
                   </button>
 
-                  <button
-                    className="edit-btn"
-                    onClick={() => editarOrdem(ordem)}
-                  >
+                  <button className="edit-btn" onClick={() => editarOrdem(ordem)}>
                     Editar
                   </button>
 
-                  <button
-                    className="delete-btn"
-                    onClick={() => excluirOrdem(ordem.id)}
-                  >
+                  <button className="delete-btn" onClick={() => excluirOrdem(ordem.id)}>
                     Excluir
                   </button>
                 </td>
